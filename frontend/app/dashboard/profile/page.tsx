@@ -38,11 +38,21 @@ export default function Profile() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    let clean = value;
+    if (name === 'full_name') {
+      clean = value.replace(/[^A-Za-z\s]/g, '').replace(/\s{2,}/g, ' ');
+    } else if (name === 'nik') {
+      clean = value.replace(/\D/g, '').slice(0, 16);
+    }
+    setFormData(prev => ({ ...prev, [name]: clean }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.nik && formData.nik.length !== 16) {
+      setMessage({ text: 'NIK harus tepat 16 digit angka.', type: 'error' });
+      return;
+    }
     setLoading(true);
     setMessage({ text: '', type: '' });
     
@@ -120,9 +130,12 @@ export default function Profile() {
               name="nik"
               value={formData.nik}
               onChange={handleChange}
+              inputMode="numeric"
+              maxLength={16}
               placeholder="16-digit ID number"
               className="w-full px-4 py-2 bg-dark-900 border border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none font-mono"
             />
+            <p className="text-xs text-slate-500">{formData.nik.length}/16 digit</p>
           </div>
         </div>
 

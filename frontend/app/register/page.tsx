@@ -22,6 +22,19 @@ export default function Register() {
       return;
     }
 
+    if (!/^[A-Za-z0-9_]{3,30}$/.test(username)) {
+      setError("Username 3-30 karakter: huruf, angka, atau underscore");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password minimal 6 karakter");
+      return;
+    }
+    if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      setError("Password harus mengandung huruf dan angka");
+      return;
+    }
+
     setLoading(true);
     
     try {
@@ -56,6 +69,8 @@ export default function Register() {
             <input 
               type="text" 
               required
+              minLength={3}
+              maxLength={30}
               className="w-full px-4 py-2 bg-dark-900 border border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none text-foreground"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -66,10 +81,13 @@ export default function Register() {
             <input 
               type="password" 
               required
+              minLength={6}
+              maxLength={72}
               className="w-full px-4 py-2 bg-dark-900 border border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none text-foreground"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+            <p className="text-xs text-slate-500 mt-1">Minimal 6 karakter, kombinasi huruf dan angka.</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1">Confirm Password</label>
@@ -91,7 +109,7 @@ export default function Register() {
         </form>
 
         <p className="mt-6 text-center text-sm text-slate-400">
-          Already have an account? <Link href="/login" className="text-primary-400 hover:text-primary-300">Login here</Link>
+          Already have an account? <Link href="/login" className="text-blue-400 hover:text-blue-300 hover:underline font-medium">Login here</Link>
         </p>
       </div>
     </div>

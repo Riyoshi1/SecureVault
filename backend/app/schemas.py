@@ -1,4 +1,5 @@
-from pydantic import BaseModel, ConfigDict
+import re
+from pydantic import BaseModel, ConfigDict, field_validator
 from typing import Optional, List
 from datetime import datetime
 
@@ -6,6 +7,25 @@ from datetime import datetime
 class UserRegister(BaseModel):
     username: str
     password: str
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v):
+        v = v.strip()
+        if not re.fullmatch(r"[A-Za-z0-9_]{3,30}", v):
+            raise ValueError("Username 3-30 karakter: huruf, angka, atau underscore")
+        return v
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v):
+        if len(v) < 6:
+            raise ValueError("Password minimal 6 karakter")
+        if len(v.encode("utf-8")) > 72:
+            raise ValueError("Password maksimal 72 byte (sekitar 72 karakter)")
+        if not (re.search(r"[A-Za-z]", v) and re.search(r"\d", v)):
+            raise ValueError("Password harus mengandung huruf dan angka")
+        return v
 
 class UserLogin(BaseModel):
     username: str
@@ -27,6 +47,26 @@ class PrivateDataUpdate(BaseModel):
     nik: Optional[str] = None
     date_of_birth: Optional[str] = None
     address: Optional[str] = None
+
+    @field_validator("full_name")
+    @classmethod
+    def validate_full_name(cls, v):
+        if v is None:
+            return v
+        v = " ".join(v.split())  # rapikan spasi ganda / spasi tepi
+        if v and not re.fullmatch(r"[A-Za-z]+(?: [A-Za-z]+)*", v):
+            raise ValueError("Nama lengkap hanya boleh berisi huruf dan spasi")
+        return v
+
+    @field_validator("nik")
+    @classmethod
+    def validate_nik(cls, v):
+        if v is None:
+            return v
+        v = v.strip()
+        if v and not re.fullmatch(r"\d{16}", v):
+            raise ValueError("NIK harus tepat 16 digit angka")
+        return v
 
 class PrivateDataResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)

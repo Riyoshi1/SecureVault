@@ -20,7 +20,13 @@ const handleResponse = async (res: Response) => {
     let errMessage = 'An error occurred';
     try {
       const errData = await res.json();
-      errMessage = errData.detail || errMessage;
+      if (Array.isArray(errData.detail)) {
+        errMessage = errData.detail
+          .map((d: any) => String(d.msg).replace(/^Value error, /, ''))
+          .join('; ');
+      } else {
+        errMessage = errData.detail || errMessage;
+      }
     } catch (e) {
       errMessage = res.statusText;
     }
