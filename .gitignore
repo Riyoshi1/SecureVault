@@ -1,0 +1,28 @@
+# Secrets & data pribadi
+.env
+.env.*
+!.env.example
+*.db
+*.sqlite*
+*.enc
+*.pem
+*.key
+backend/encrypted_files/
+
+# Dependencies & build
+node_modules/
+.next/
+out/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Laporan (tidak dipublikasikan)
+LAPORAN_TUGAS_1_KI.md
