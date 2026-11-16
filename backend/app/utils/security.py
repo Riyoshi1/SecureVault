@@ -155,3 +155,40 @@ def decode_access_token(token: str) -> tuple[str, bytes]:
         return user_id, master_key
     except JWTError:
         raise ValueError("Invalid or expired token")
+
+
+# =====================================================================
+# Assignment 2 — Key hierarchy helpers (Stallings Ch 10.1 KEK vs DEK)
+# =====================================================================
+
+def derive_kek(master_key: bytes) -> dict:
+    """
+    Derive the user's Key-Encryption-Key (KEK) pair from the Master Key.
+    Separate HKDF contexts => independent from the Assignment-1 data keys.
+    The KEK only ever encrypts other keys (DEKs), never user data.
+    """
+    return {
+        "aes_key": HKDF(master=master_key, key_len=32, salt=b"", hashmod=SHA256,
+                        context=b"securevault-kek-aes-256-wrap"),
+        "hmac_key": HKDF(master=master_key, key_len=32, salt=b"", hashmod=SHA256,
+                         context=b"securevault-kek-hmac-sha256"),
+    }
+
+
+def derive_shared_dek_keys(shared_key: bytes) -> dict:
+    """
+    Expand the 32-byte Shared Symmetric Key (session DEK) into an AES-256 key
+    and an independent HMAC key (Encrypt-then-MAC). Whoever holds the shared
+    key can recompute these — that's all the requester needs.
+    """
+    return {
+        "aes_key": HKDF(master=shared_key, key_len=32, salt=b"", hashmod=SHA256,
+                        context=b"securevault-shared-dek-aes"),
+        "hmac_key": HKDF(master=shared_key, key_len=32, salt=b"", hashmod=SHA256,
+                         context=b"securevault-shared-dek-hmac"),
+    }
+
+
+def key_fingerprint(key: bytes) -> str:
+    """Non-reversible fingerprint of a 256-bit random key (first 16 bytes of SHA-256)."""
+    return hashlib.sha256(b"securevault-fp" + key).hexdigest()[:32]

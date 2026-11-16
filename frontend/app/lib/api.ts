@@ -137,5 +137,64 @@ export const api = {
       body: JSON.stringify({ plaintext }),
     });
     return handleResponse(res);
+  },
+
+  // ===== Assignment 2: Key Management & Sharing =====
+  getMyKeys: async () => {
+    const res = await fetch(`${API_BASE}/api/sharing/my-keys`, { headers: getHeaders() });
+    return handleResponse(res);
+  },
+
+  listUsers: async () => {
+    const res = await fetch(`${API_BASE}/api/sharing/users`, { headers: getHeaders() });
+    return handleResponse(res);
+  },
+
+  requestAccess: async (owner_id: string, reason?: string) => {
+    const res = await fetch(`${API_BASE}/api/sharing/request`, {
+      method: 'POST', headers: getHeaders(), body: JSON.stringify({ owner_id, reason }),
+    });
+    return handleResponse(res);
+  },
+
+  incomingRequests: async () => {
+    const res = await fetch(`${API_BASE}/api/sharing/incoming`, { headers: getHeaders() });
+    return handleResponse(res);
+  },
+
+  outgoingRequests: async () => {
+    const res = await fetch(`${API_BASE}/api/sharing/outgoing`, { headers: getHeaders() });
+    return handleResponse(res);
+  },
+
+  approveRequest: async (id: string) => {
+    const res = await fetch(`${API_BASE}/api/sharing/approve/${id}`, { method: 'POST', headers: getHeaders() });
+    return handleResponse(res);
+  },
+
+  denyRequest: async (id: string) => {
+    const res = await fetch(`${API_BASE}/api/sharing/deny/${id}`, { method: 'POST', headers: getHeaders() });
+    return handleResponse(res);
+  },
+
+  revokeRequest: async (id: string) => {
+    const res = await fetch(`${API_BASE}/api/sharing/revoke/${id}`, { method: 'POST', headers: getHeaders() });
+    return handleResponse(res);
+  },
+
+  accessSharedData: async (request_id: string, encrypted_key: string) => {
+    const res = await fetch(`${API_BASE}/api/sharing/access-shared-data`, {
+      method: 'POST', headers: getHeaders(), body: JSON.stringify({ request_id, encrypted_key }),
+    });
+    return handleResponse(res);
+  },
+
+  /** Returns the decrypted shared file as a Blob (caller decides preview vs download). */
+  fetchSharedFile: async (request_id: string, file_id: string, encrypted_key: string): Promise<Blob> => {
+    const res = await fetch(`${API_BASE}/api/sharing/shared-file/${file_id}`, {
+      method: 'POST', headers: getHeaders(), body: JSON.stringify({ request_id, encrypted_key }),
+    });
+    if (!res.ok) await handleResponse(res);
+    return res.blob();
   }
 };

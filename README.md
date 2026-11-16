@@ -19,6 +19,29 @@ Aplikasi web *full-stack* untuk penyimpanan data pribadi (PII) sesuai **UU PDP N
 
 ---
 
+## 🔑 Tugas 2 — Key Management (RSA-2048-OAEP + Envelope Encryption)
+
+Laporan lengkap: [`LAPORAN_TUGAS_2_KI.md`](LAPORAN_TUGAS_2_KI.md)
+
+| Kebutuhan Tugas 2 | Referensi | Implementasi |
+| :--- | :--- | :--- |
+| 1. User dapat meminta melihat data privat user lain (PII, gambar, dokumen, video) | Stallings Ch. 10.1 | `POST /api/sharing/request` → tabel `access_requests` (status `PENDING`). UI: **Key Management & Sharing › B**. |
+| 2. Pemilik data membangkitkan kunci simetris untuk berbagi | Stallings Ch. 10.1 (*session key*), OWASP KM (CSPRNG) | `POST /api/sharing/approve/{id}`: DEK 256-bit `os.urandom(32)`; PII + file pemilik di-dekripsi lalu dienkripsi ulang (AES-256-CBC + HMAC-SHA256, sub-kunci via HKDF dari DEK) ke tabel `shared_files` / `access_requests.encrypted_pii_snapshot`. |
+| 3. Kunci simetris didistribusikan "dengan cara lain" (WA/Email) terenkripsi asimetris | Stallings Ch. 9.1 & 10.1, OWASP (RSA ≥ 2048, OAEP) | `app/crypto/rsa_cipher.py`: `Base64(RSA-OAEP-SHA256(PubKey_peminta, DEK))`. Tombol **Copy / WhatsApp (`wa.me`) / Email (`mailto:`) / Download `.key`**. Token **tidak** dikirim lewat API ke peminta. |
+| 4. Seluruh kunci simetris disimpan aman di sistem | OWASP Cryptographic Storage & KM (*key wrapping*), Stallings KEK vs DEK | DEK disimpan **ter-wrap** di `stored_symmetric_keys` (`AES-256-CBC(KEK) ‖ HMAC`, KEK = HKDF(Master Key PBKDF2)). Private key RSA disimpan ter-wrap di `users.rsa_private_key_encrypted`. Hex ditampilkan di UI (Section A). |
+
+**Endpoint baru** (`app/routes/sharing.py`): `GET /my-keys`, `GET /users`, `POST /request`, `GET /incoming`, `GET /outgoing`, `POST /approve/{id}`, `POST /deny/{id}`, `POST /revoke/{id}`, `POST /access-shared-data`, `POST /shared-file/{file_id}` (semua di bawah `/api/sharing`).
+
+**Kompatibilitas Tugas 1:** kolom RSA ditambahkan otomatis via `ALTER TABLE` saat startup (`database.py::_migrate_assignment2`), dan user lama mendapat pasangan kunci RSA otomatis saat login berikutnya. Data & file Tugas 1 tidak diubah.
+
+**Verifikasi E2E** (34 pemeriksaan, termasuk regresi Tugas 1, token yang dimanipulasi, pihak ketiga, dan revoke):
+```powershell
+cd backend
+python tests/e2e_assignment2.py
+```
+
+---
+
 ## 🚀 Cara Menjalankan Aplikasi
 
 ### 1. Menjalankan Backend (Python FastAPI — Port `8000`)

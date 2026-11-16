@@ -13,6 +13,7 @@ from sqlalchemy.future import select
 
 from app.database import get_db
 from app.models import User
+from app.crypto import rsa_cipher
 from app.schemas import UserRegister, UserLogin, TokenResponse, UserResponse
 from app.utils.security import (
     hash_password, verify_password, generate_salt, derive_master_key,
@@ -22,6 +23,18 @@ from app.utils.security import (
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+
+
+async def ensure_rsa_keys(user: User, keys_dict: dict, db) -> None:
+    """Generate + store an RSA-2048 key pair for `user` if missing (idempotent)."""
+    if user.rsa_public_key and user.rsa_private_key_encrypted:
+        return
+    public_pem, private_pem = rsa_cipher.generate_keypair()
+    user.rsa_public_key = public_pem
+    user.rsa_private_key_encrypted = rsa_cipher.wrap_private_key(
+        private_pem, keys_dict["aes_key"], keys_dict["hmac_key"]
+    )
+    await db.commit()
 
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
@@ -84,6 +97,8 @@ async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
     await db.refresh(new_user)
     
     master_key = derive_master_key(user_data.password, new_user.encryption_salt)
+    # Assignment 2: every new user gets an RSA-2048 key pair (private key wrapped)
+    await ensure_rsa_keys(new_user, derive_algorithm_keys(master_key), db)
     access_token = create_access_token(new_user.id, master_key)
     
     return {"access_token": access_token, "token_type": "bearer"}
@@ -112,6 +127,10 @@ async def login(
         
     # Derive the master key using the user's password and unique salt.
     master_key = derive_master_key(user_data.password, user.encryption_salt)
+    
+    # Assignment 2 backward compatibility: Assignment-1 users get an RSA key pair
+    # generated on their first login (wrapped with their own Master-Key-derived AES key).
+    await ensure_rsa_keys(user, derive_algorithm_keys(master_key), db)
     
     # Create the JWT access token carrying the user id and encrypted master key.
     # The master key is encrypted inside the JWT using Fernet (see security.py).

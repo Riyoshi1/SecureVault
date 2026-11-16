@@ -13,7 +13,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import init_db
 from app.config import settings
-from app.routes import auth, data, files
+from app.routes import auth, data, files, sharing
 import os
 
 @asynccontextmanager
@@ -62,6 +62,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 app.include_router(auth.router)
 app.include_router(data.router)
 app.include_router(files.router)
+app.include_router(sharing.router)  # Assignment 2: Key Management & Sharing
 
 @app.get("/")
 async def root():

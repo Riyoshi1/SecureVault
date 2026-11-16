@@ -132,3 +132,58 @@ class CipherInspectResponse(BaseModel):
     plaintext: str
     plaintext_hex: str
     items: List[CipherInspectItem]
+
+
+# =====================================================================
+# Assignment 2 — Key Management & Sharing
+# =====================================================================
+class AccessRequestCreate(BaseModel):
+    owner_id: str
+    reason: Optional[str] = None
+
+    @field_validator("reason")
+    @classmethod
+    def validate_reason(cls, v):
+        if v is None:
+            return v
+        v = v.strip()
+        if len(v) > 500:
+            raise ValueError("Alasan maksimal 500 karakter")
+        return v or None
+
+
+class SharedAccessRequest(BaseModel):
+    request_id: str
+    encrypted_key: str  # Base64 RSA-OAEP ciphertext received out-of-band
+
+
+class AccessRequestItem(BaseModel):
+    id: str
+    requester_id: str
+    requester_username: str
+    owner_id: str
+    owner_username: str
+    reason: Optional[str] = None
+    status: str
+    key_fingerprint: Optional[str] = None
+    rsa_encrypted_key_b64: Optional[str] = None
+    created_at: datetime
+    approved_at: Optional[datetime] = None
+
+
+class SharedFileItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    original_filename: str
+    file_category: str
+    mime_type: str
+    source_algorithm: str
+    original_size: int
+
+
+class SharedDataResponse(BaseModel):
+    request_id: str
+    owner_username: str
+    key_fingerprint: str
+    pii: PrivateDataResponse
+    files: List[SharedFileItem]

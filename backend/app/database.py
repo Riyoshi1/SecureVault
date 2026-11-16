@@ -54,6 +54,22 @@ def async_session() -> AsyncSessionAdapter:
 async def init_db():
     import app.models  # noqa: F401 - ensure models are registered on Base.metadata
     Base.metadata.create_all(bind=engine)
+    _migrate_assignment2()
+
+
+def _migrate_assignment2():
+    """
+    Graceful schema upgrade for Assignment-1 databases: create_all() does not add
+    columns to existing tables, so add the RSA columns to `users` if missing.
+    Existing users get their key pair generated on next login.
+    """
+    from sqlalchemy import inspect, text
+    cols = {c["name"] for c in inspect(engine).get_columns("users")}
+    with engine.begin() as conn:
+        if "rsa_public_key" not in cols:
+            conn.execute(text("ALTER TABLE users ADD COLUMN rsa_public_key TEXT"))
+        if "rsa_private_key_encrypted" not in cols:
+            conn.execute(text("ALTER TABLE users ADD COLUMN rsa_private_key_encrypted BLOB"))
 
 
 async def get_db():

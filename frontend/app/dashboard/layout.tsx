@@ -30,6 +30,8 @@ export default function DashboardLayout({
     { name: 'Upload', path: '/dashboard/upload', icon: '⬆️' },
     { name: 'Personal Profile', path: '/dashboard/profile', icon: '👤' },
     { name: 'Benchmark', path: '/dashboard/benchmark', icon: '⚡' },
+    { name: 'Key Management & Sharing', path: '/dashboard/sharing', icon: '🔑' },
+    { name: 'Shared With Me', path: '/dashboard/shared', icon: '📨' },
   ];
 
   return (
